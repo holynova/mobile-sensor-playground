@@ -3,12 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Sensor Instrument Panel</title>
-    <!-- Import high-quality fonts: Inter for UI and JetBrains Mono/Orbitron for metrics -->
+    <title>WebGL Sensor Instrument Panel</title>
+    <!-- Import high-quality fonts: Inter for UI and JetBrains Mono for metrics -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    
+    <!-- Import Map for Three.js (No-build standard) -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+        }
+    }
+    </script>
 </head>
 <body>
     <!-- Main Application Grid -->
@@ -17,8 +26,8 @@
         <!-- Header: Clean Technical Info Bar -->
         <header class="app-header">
             <div class="brand">
-                <span class="brand-num">SYS.08</span>
-                <span class="brand-title">SENSOR INSTRUMENT</span>
+                <span class="brand-num">SYS.3D</span>
+                <span class="brand-title">WEBGL SENSOR PANEL</span>
             </div>
             <div id="sim-indicator" class="desktop-sim-tag hide">
                 <span class="pulse-dot"></span> SIMULATOR MODE
@@ -37,7 +46,7 @@
                             <span class="panel-tag">STATUS</span>
                             <h3>SYSTEM TELEMETRY</h3>
                         </div>
-                        <p class="panel-desc">本仪器用于监控移动物理传感器姿态。iOS 用户需手动授权，桌面端将自动加载鼠标感应模拟器。</p>
+                        <p class="panel-desc">本仪器用于监控移动物理传感器姿态。已升级为 Three.js 3D 渲染，iOS 用户需手动授权。</p>
                         
                         <div class="controls-group">
                             <button id="btn-request-permission" class="btn btn-primary">
@@ -81,124 +90,66 @@
                 </div>
             </section>
 
-            <!-- SCENE 1: WATER PARTICLES -->
+            <!-- SCENE 1: WATER PARTICLES (WebGL) -->
             <section id="scene-water" class="scene-section">
                 <div class="viewer-container">
                     <canvas id="canvas-water"></canvas>
                     <div class="viewer-overlay">
                         <div class="panel-header">
-                            <span class="panel-tag">PHYSICS / FLUID</span>
-                            <h3>LIQUID PARTICLE SIMULATOR</h3>
+                            <span class="panel-tag">WEBGL / FLUID</span>
+                            <h3>3D FLUID SIMULATOR</h3>
                         </div>
-                        <p>倾斜倾角驱动流体加速。多粒子弹力排斥模拟流体体积。</p>
+                        <p>3D 盒体中运行的流体模拟。水滴可在 Z 轴上前后运动碰撞。</p>
                         <button id="btn-reset-water" class="btn btn-secondary btn-xs">RESET SIM</button>
                     </div>
                 </div>
             </section>
 
-            <!-- SCENE 2: HOURGLASS -->
+            <!-- SCENE 2: HOURGLASS (WebGL) -->
             <section id="scene-hourglass" class="scene-section">
                 <div class="viewer-container">
                     <canvas id="canvas-hourglass"></canvas>
                     <div class="viewer-overlay">
                         <div class="panel-header">
-                            <span class="panel-tag">PHYSICS / SAND</span>
-                            <h3>GRAVITY HOURGLASS</h3>
+                            <span class="panel-tag">WEBGL / SAND</span>
+                            <h3>3D GLASS HOURGLASS</h3>
                         </div>
-                        <p>垂直手机开启下漏。翻转 180° 重置地心引力方向，沙粒回流。</p>
+                        <p>3D 玻璃漏斗实体与三维重力模拟。倾斜使沙粒在 3D 空间滚落堆积。</p>
                         <button id="btn-reset-hourglass" class="btn btn-secondary btn-xs">RESET SAND</button>
                     </div>
                 </div>
             </section>
 
-            <!-- SCENE 3: 3D CUBE -->
+            <!-- SCENE 3: 3D CUBE (WebGL) -->
             <section id="scene-cube" class="scene-section">
                 <div class="viewer-container center-content">
                     <div class="viewer-overlay absolute-top">
                         <div class="panel-header">
-                            <span class="panel-tag">POSE / 3D</span>
+                            <span class="panel-tag">POSE / 3D WebGL</span>
                             <h3>GYRO ORIENTATION BOX</h3>
                         </div>
-                        <p>三维立体线框体实时对齐传感器物理法线姿态。</p>
+                        <p>真正 WebGL 3D 网格，受灯光阴影与姿态矩阵驱动。</p>
                     </div>
-                    <!-- Cube Stage -->
+                    <!-- Cube Stage (Swapped to WebGL Canvas) -->
                     <div class="cube-stage">
-                        <div class="cube-wrapper" id="cube-wrapper">
-                            <div class="cube" id="css-3d-cube">
-                                <div class="cube-face cube-face-front"><span>01_FRONT</span></div>
-                                <div class="cube-face cube-face-back"><span>02_BACK</span></div>
-                                <div class="cube-face cube-face-left"><span>03_LEFT</span></div>
-                                <div class="cube-face cube-face-right"><span>04_RIGHT</span></div>
-                                <div class="cube-face cube-face-top"><span>05_TOP</span></div>
-                                <div class="cube-face cube-face-bottom"><span>06_BOTTOM</span></div>
-                            </div>
-                        </div>
+                        <canvas id="canvas-cube"></canvas>
                     </div>
                 </div>
             </section>
 
-            <!-- SCENE 4: PARALLAX SCENIC -->
+            <!-- SCENE 4: PARALLAX SCENIC (WebGL) -->
             <section id="scene-parallax" class="scene-section">
                 <div class="viewer-container flex-column">
                     <div class="viewer-overlay relative-top">
                         <div class="panel-header">
-                            <span class="panel-tag">DEPTH / OPTICS</span>
-                            <h3>STEREOSCOPIC PARALLAX</h3>
+                            <span class="panel-tag">DEPTH / CAMERA</span>
+                            <h3>3D CAMERA PARALLAX</h3>
                         </div>
-                        <p>利用图纸层叠结构与运动学差值，构建扁平的纵深立体感。</p>
+                        <p>使用透视投影摄像机，沿 Z 轴层叠放置纹理。角度变化移动相机，提供真 3D 景深。</p>
                     </div>
+                    <!-- Parallax Stage (Swapped to WebGL Canvas) -->
                     <div class="parallax-frame" id="parallax-frame">
-                        <!-- Layer 0: Sky (Distant Background) -->
-                        <div class="parallax-layer layer-sky" data-depth="0.05">
-                            <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" width="100%" height="100%">
-                                <rect width="800" height="600" fill="#0f172a" />
-                                <!-- Technical Grid lines for sky -->
-                                <line x1="0" y1="150" x2="800" y2="150" stroke="#1e293b" stroke-width="1" />
-                                <line x1="0" y1="300" x2="800" y2="300" stroke="#1e293b" stroke-width="1" />
-                                <line x1="0" y1="450" x2="800" y2="450" stroke="#1e293b" stroke-width="1" />
-                                <line x1="200" y1="0" x2="200" y2="600" stroke="#1e293b" stroke-width="1" />
-                                <line x1="400" y1="0" x2="400" y2="600" stroke="#1e293b" stroke-width="1" />
-                                <line x1="600" y1="0" x2="600" y2="600" stroke="#1e293b" stroke-width="1" />
-                            </svg>
-                        </div>
-                        
-                        <!-- Layer 1: Stylized Dial (Sun Replacement) -->
-                        <div class="parallax-layer layer-moon" data-depth="0.18">
-                            <div class="tech-dial-moon"></div>
-                        </div>
-                        
-                        <!-- Layer 2: Vector Mountain Back -->
-                        <div class="parallax-layer layer-mountain-back" data-depth="0.35">
-                            <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" width="100%" height="100%">
-                                <path d="M 0 480 L 180 340 L 320 490 L 460 310 L 680 520 L 800 440 L 800 600 L 0 600 Z" fill="#1e293b"/>
-                                <!-- Outline border on top of mountain -->
-                                <path d="M 0 480 L 180 340 L 320 490 L 460 310 L 680 520 L 800 440" fill="none" stroke="#475569" stroke-width="1.5"/>
-                            </svg>
-                        </div>
-
-                        <!-- Layer 3: Vector Mountain Front -->
-                        <div class="parallax-layer layer-mountain-mid" data-depth="0.65">
-                            <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" width="100%" height="100%">
-                                <path d="M 0 520 L 240 410 L 430 530 L 580 400 L 800 540 L 800 600 L 0 600 Z" fill="#0f172a"/>
-                                <path d="M 0 520 L 240 410 L 430 530 L 580 400 L 800 540" fill="none" stroke="#64748b" stroke-width="1.5"/>
-                            </svg>
-                        </div>
-
-                        <!-- Layer 4: Foreground Grid Panel -->
-                        <div class="parallax-layer layer-foreground" data-depth="1.00">
-                            <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" width="100%" height="100%">
-                                <path d="M -50 540 C 150 540, 250 510, 450 550 C 650 590, 750 530, 850 555 L 850 600 L -50 600 Z" fill="#020617" stroke="#ff6b00" stroke-width="2"/>
-                                <!-- Vertical ticks at the bottom to look like scale rulers -->
-                                <line x1="50" y1="542" x2="50" y2="560" stroke="#475569" stroke-width="2" />
-                                <line x1="150" y1="540" x2="150" y2="560" stroke="#475569" stroke-width="2" />
-                                <line x1="250" y1="535" x2="250" y2="560" stroke="#475569" stroke-width="2" />
-                                <line x1="350" y1="540" x2="350" y2="560" stroke="#475569" stroke-width="2" />
-                                <line x1="450" y1="550" x2="450" y2="570" stroke="#ff6b00" stroke-width="2" />
-                                <line x1="550" y1="560" x2="550" y2="580" stroke="#475569" stroke-width="2" />
-                                <line x1="650" y1="560" x2="650" y2="580" stroke="#475569" stroke-width="2" />
-                                <line x1="750" y1="555" x2="750" y2="580" stroke="#475569" stroke-width="2" />
-                            </svg>
-                        </div>
+                        <canvas id="canvas-parallax"></canvas>
                     </div>
                 </div>
             </section>

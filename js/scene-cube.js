@@ -1,55 +1,145 @@
 /**
- * Scene: 3D Rotating Cube
- * Controls HTML CSS 3D transformed elements responsive to phone posture.
+ * Scene: 3D Pose Cube (WebGL with Three.js)
+ * Displays a rotating wireframe box inside a WebGL rendering context.
  */
+import * as THREE from 'three';
 import { sensorState } from '../app.js';
 
-let cube = null;
-let curX = -25; // Base rotation so user can see it's a 3D box
-let curY = 25;
-let curZ = 0;
+let container = null;
+let canvas = null;
+let renderer = null;
+let scene = null;
+let camera = null;
+let cubeGroup = null;
 
-const lerpFactor = 0.12; // smooth out jittery gyroscope readings
+let curX = -0.3; // Initial rotation offsets in radians
+let curY = 0.4;
+let curZ = 0;
+const lerpFactor = 0.12;
 
 export function initCube() {
-    cube = document.getElementById('css-3d-cube');
-    if (!cube) return;
+    canvas = document.getElementById('canvas-cube');
+    if (!canvas) return;
     
-    // Set base orientation
-    curX = -25;
-    curY = 25;
-    curZ = 0;
+    // Only initialize Three.js components once
+    if (renderer) {
+        resizeCube();
+        return;
+    }
+
+    container = canvas.parentElement;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    // 1. Create Scene
+    scene = new THREE.Scene();
+    scene.background = null; // transparent background
+
+    // 2. Create Camera
+    camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+    camera.position.z = 6;
+
+    // 3. Create WebGL Renderer
+    renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        antialias: true,
+        alpha: true
+    });
+    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    renderer.setSize(width, height);
+
+    // 4. Create Geometries and Materials (Instrument Wireframe Box)
+    cubeGroup = new THREE.Group();
+
+    // Semi-translucent body
+    const geometry = new THREE.BoxGeometry(1.8, 1.8, 1.8);
+    const material = new THREE.MeshStandardMaterial({
+        color: 0x101420,
+        roughness: 0.2,
+        metalness: 0.1,
+        transparent: true,
+        opacity: 0.65,
+        side: THREE.DoubleSide
+    });
+    const bodyMesh = new THREE.Mesh(geometry, material);
+    cubeGroup.add(bodyMesh);
+
+    // Highlight Orange Edges
+    const edges = new THREE.EdgesGeometry(geometry);
+    const lineMat = new THREE.LineBasicMaterial({
+        color: 0xff6b00,
+        linewidth: 2 // Note: linewidth is usually 1 on Windows browsers due to WebGL limitations, but edges look clean
+    });
+    const wireframe = new THREE.LineSegments(edges, lineMat);
+    cubeGroup.add(wireframe);
+
+    // Minor decorative inner axis wireframe
+    const innerGeo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
+    const innerEdges = new THREE.EdgesGeometry(innerGeo);
+    const innerLineMat = new THREE.LineBasicMaterial({
+        color: 0x3d4960,
+        linewidth: 1
+    });
+    const innerWireframe = new THREE.LineSegments(innerEdges, innerLineMat);
+    cubeGroup.add(innerWireframe);
+
+    scene.add(cubeGroup);
+
+    // 5. Add Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight1.position.set(5, 5, 5);
+    scene.add(dirLight1);
+
+    const dirLight2 = new THREE.DirectionalLight(0xff6b00, 0.4);
+    dirLight2.position.set(-5, -5, -2);
+    scene.add(dirLight2);
+
+    // Handle resizing
+    window.addEventListener('resize', resizeCube);
+}
+
+function resizeCube() {
+    if (!renderer || !container || !camera) return;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(width, height);
 }
 
 export function tickCube(timestamp) {
-    if (!cube) return;
+    if (!renderer || !scene || !camera || !cubeGroup) return;
 
-    // Auto-spin simulated Alpha yaw when in simulation mode to show 3D nature
+    // Auto-spin simulated Alpha yaw when in simulation mode
     if (sensorState.isSimulated) {
-        // Increment alpha slowly for visual dynamism
         sensorState.alpha = (sensorState.alpha + 0.3) % 360;
     }
 
-    // Determine targets
-    // We map:
-    // beta (front/back tilt) -> rotate around X-axis
-    // gamma (left/right tilt) -> rotate around Y-axis
-    // alpha (compass/yaw) -> rotate around Z-axis
-    // We inject a base offset of X: -20, Y: 25 to ensure the cube is always rendered isometrically when phone is flat
-    const targetX = -sensorState.beta - 20; 
-    const targetY = sensorState.gamma + 25;
-    const targetZ = sensorState.alpha;
+    // Map degree orientations to target radians
+    const targetX = (-sensorState.beta - 20) * Math.PI / 180;
+    const targetY = (sensorState.gamma + 25) * Math.PI / 180;
+    const targetZ = (sensorState.alpha) * Math.PI / 180;
 
-    // Smooth Lerp transitions
+    // Smooth rotations with Lerp
     curX += (targetX - curX) * lerpFactor;
     curY += (targetY - curY) * lerpFactor;
 
-    // Handle Z wrapping (0 ~ 360)
+    // Alpha angle wrapping protection
     let diffZ = targetZ - curZ;
-    if (diffZ > 180) diffZ -= 360;
-    if (diffZ < -180) diffZ += 360;
-    curZ = (curZ + diffZ * lerpFactor + 360) % 360;
+    if (diffZ > Math.PI) diffZ -= Math.PI * 2;
+    if (diffZ < -Math.PI) diffZ += Math.PI * 2;
+    curZ = (curZ + diffZ * lerpFactor + Math.PI * 2) % (Math.PI * 2);
 
-    // Apply 3D CSS Transforms
-    cube.style.transform = `rotateX(${curX}deg) rotateY(${curY}deg) rotateZ(${curZ}deg)`;
+    // Apply rotation matrices
+    cubeGroup.rotation.x = curX;
+    cubeGroup.rotation.y = curY;
+    cubeGroup.rotation.z = curZ;
+
+    // Render frame
+    renderer.render(scene, camera);
 }
