@@ -460,10 +460,17 @@ body {
     background: #090c13;
     border-top: 2px solid var(--border-color);
     display: flex;
-    justify-content: space-around;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
     padding-bottom: var(--bottom-safe-area);
     z-index: 10;
     flex-shrink: 0;
+    scrollbar-width: none; /* Hide scrollbars for Firefox */
+}
+
+.app-nav::-webkit-scrollbar {
+    display: none; /* Hide scrollbars for Chrome/Safari */
 }
 
 .nav-item {
@@ -479,7 +486,8 @@ body {
     font-weight: 700;
     gap: 4px;
     cursor: pointer;
-    flex-grow: 1;
+    flex: 0 0 74px; /* fixed width for horizontal scrolling list */
+    scroll-snap-align: start;
     transition: color 0.15s ease;
     border-top: 3px solid transparent;
 }

@@ -1,6 +1,6 @@
 /**
  * Mobile Sensor Playground - App Coordinator
- * Handles sensor setup, iOS permission flows, and desktop fallbacks.
+ * Handles sensor setup, iOS permission flows, desktop simulation, and tab switching.
  */
 
 // Shared sensor state
@@ -8,14 +8,21 @@ export const sensorState = {
     alpha: 0,     // Yaw (0 ~ 360)
     beta: 0,      // Pitch (-180 ~ 180)
     gamma: 0,     // Roll (-90 ~ 90)
-    source: '未连接', // 'Real' or 'Simulated'
+    source: '未连接', 
     isSimulated: true,
-    permission: 'pending' // 'pending', 'granted', 'denied', 'unsupported'
+    permission: 'pending'
+};
+
+// Acceleration sensor state
+export const accelState = {
+    x: 0,
+    y: 0,
+    z: 0,
+    shakeImpulse: 0 // simulated shake trigger
 };
 
 // Scene instances
 let currentSceneId = 'scene-dashboard';
-let activeSceneModule = null;
 
 // Import scene modules
 import { initDashboard, tickDashboard, resizeDashboard } from './js/sensor-visualizer.js';
@@ -24,13 +31,25 @@ import { initHourglass, tickHourglass, resizeHourglass } from './js/scene-hourgl
 import { initCube, tickCube } from './js/scene-cube.js';
 import { initParallax, tickParallax } from './js/scene-parallax.js';
 
-// Scene map
+// Import the 5 NEW scene modules
+import { initMaze, tickMaze, resizeMaze } from './js/scene-maze.js';
+import { initStars, tickStars } from './js/scene-stars.js';
+import { initShake, tickShake, resizeShake } from './js/scene-shake.js';
+import { initCard, tickCard, resizeCard } from './js/scene-card.js';
+import { initTheremin, tickTheremin, resizeTheremin } from './js/scene-theremin.js';
+
+// Scene map mapping
 const scenes = {
     'scene-dashboard': { init: initDashboard, tick: tickDashboard, resize: resizeDashboard },
     'scene-water': { init: initWater, tick: tickWater, resize: resizeWater },
     'scene-hourglass': { init: initHourglass, tick: tickHourglass, resize: resizeHourglass },
     'scene-cube': { init: initCube, tick: tickCube, resize: null },
-    'scene-parallax': { init: initParallax, tick: tickParallax, resize: null }
+    'scene-parallax': { init: initParallax, tick: tickParallax, resize: null },
+    'scene-maze': { init: initMaze, tick: tickMaze, resize: resizeMaze },
+    'scene-stars': { init: initStars, tick: tickStars, resize: null },
+    'scene-shake': { init: initShake, tick: tickShake, resize: resizeShake },
+    'scene-card': { init: initCard, tick: tickCard, resize: resizeCard },
+    'scene-theremin': { init: initTheremin, tick: tickTheremin, resize: resizeTheremin }
 };
 
 // Target elements
@@ -75,6 +94,9 @@ function setupNavigation() {
             navItems.forEach(n => n.classList.remove('active'));
             item.classList.add('active');
 
+            // Handle scroll tab focus on mobile
+            item.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+
             // Switch view
             switchScene(target);
         });
@@ -82,6 +104,14 @@ function setupNavigation() {
 }
 
 function switchScene(sceneId) {
+    // Stop audio context if leaving Theremin scene
+    if (currentSceneId === 'scene-theremin' && sceneId !== 'scene-theremin') {
+        const btnToggle = document.getElementById('btn-toggle-audio');
+        if (btnToggle && btnToggle.innerText.includes('STOP')) {
+            btnToggle.click(); // Stop oscillator
+        }
+    }
+
     // Hide all scenes
     document.querySelectorAll('.scene-section').forEach(section => {
         section.classList.remove('active');
@@ -107,27 +137,26 @@ function detectDeviceSupport() {
 
     if (isIOS) {
         sensorState.permission = 'pending';
-        updatePermissionUI('等待激活', 'pending');
+        updatePermissionUI('WAITING', 'pending');
         btnRequest.addEventListener('click', requestIOSPermission);
     } else if (typeof window.DeviceOrientationEvent !== 'undefined') {
         // Modern android/non-iOS that supports Orientation
-        // We will bind orientation check immediately.
         window.addEventListener('deviceorientation', handleOrientationEvent, true);
+        window.addEventListener('devicemotion', handleMotionEvent, true);
         
         // Timeout to verify if orientation actually sends values
         setTimeout(() => {
             if (sensorState.isSimulated) {
-                // If still simulated, sensor API exists but no real values generated (like on desktop)
                 enableSimulationMode(true);
             }
         }, 1000);
 
         sensorState.permission = 'granted';
-        updatePermissionUI('已激活', 'success');
+        updatePermissionUI('ACTIVE', 'success');
         btnRequest.style.display = 'none';
     } else {
         sensorState.permission = 'unsupported';
-        updatePermissionUI('不支持陀螺仪', 'pending');
+        updatePermissionUI('NO SENSOR', 'pending');
         enableSimulationMode(true);
     }
 }
@@ -139,51 +168,57 @@ async function requestIOSPermission() {
         if (response === 'granted') {
             sensorState.permission = 'granted';
             sensorState.isSimulated = false;
-            sensorState.source = '设备物理传感器 (iOS)';
-            updatePermissionUI('已激活', 'success');
+            sensorState.source = 'PHYSICAL';
+            updatePermissionUI('ACTIVE', 'success');
             btnRequest.style.display = 'none';
 
             window.addEventListener('deviceorientation', handleOrientationEvent, true);
+            window.addEventListener('devicemotion', handleMotionEvent, true);
             simIndicator.classList.add('hide');
         } else {
             sensorState.permission = 'denied';
-            updatePermissionUI('拒绝访问', 'pending');
+            updatePermissionUI('DENIED', 'pending');
             enableSimulationMode(true);
         }
     } catch (e) {
         console.error('Sensor Permission Request Error:', e);
         sensorState.permission = 'denied';
-        updatePermissionUI('授权失败', 'pending');
+        updatePermissionUI('FAILED', 'pending');
         enableSimulationMode(true);
     }
 }
 
 // Device orientation listener
 function handleOrientationEvent(event) {
-    // If event values are null, it means no real hardware sensor is present (even if API exists)
     if (event.beta === null || event.gamma === null) {
         return; 
     }
 
     sensorState.isSimulated = false;
-    sensorState.source = '设备物理传感器';
+    sensorState.source = 'PHYSICAL';
     
     // Normalize orientations
-    // Alpha (Yaw): 0 to 360
     sensorState.alpha = event.alpha || 0;
-    // Beta (Pitch): -180 to 180 (tilt front-to-back)
     sensorState.beta = event.beta || 0;
-    // Gamma (Roll): -90 to 90 (tilt left-to-right)
     sensorState.gamma = event.gamma || 0;
 
     simIndicator.classList.add('hide');
+}
+
+// Device motion listener
+function handleMotionEvent(event) {
+    if (event.acceleration) {
+        accelState.x = event.acceleration.x || 0;
+        accelState.y = event.acceleration.y || 0;
+        accelState.z = event.acceleration.z || 0;
+    }
 }
 
 // Enable desktop simulation
 function enableSimulationMode(force = false) {
     if (force) {
         sensorState.isSimulated = true;
-        sensorState.source = '鼠标模拟';
+        sensorState.source = 'SIMULATED';
         simIndicator.classList.remove('hide');
     }
 }
@@ -207,15 +242,12 @@ function setupDesktopSimulation() {
         const cX = window.innerWidth / 2;
         const cY = window.innerHeight / 2;
 
-        // Ratio from center: -1 to +1
         const rX = (x - cX) / cX;
         const rY = (y - cY) / cY;
 
         // Map mouse position to tilt angles:
-        // Left/Right: Gamma (-45 to 45 deg)
         sensorState.gamma = rX * 45;
-        // Front/Back: Beta (-60 to 60 deg)
-        sensorState.beta = rY * -60; // Up is forward tilt, down is backward tilt
+        sensorState.beta = rY * -60; 
 
         // If mouse dragging, also rotate yaw (Alpha)
         if (isDragging) {
@@ -237,6 +269,17 @@ function setupDesktopSimulation() {
 
     window.addEventListener('mouseup', () => {
         isDragging = false;
+    });
+
+    // Press SPACE BAR on desktop to trigger a simulated device shake!
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            e.preventDefault();
+            accelState.shakeImpulse = 20; // set trigger value
+            setTimeout(() => {
+                accelState.shakeImpulse = 0; // reset
+            }, 150);
+        }
     });
 
     // Touch support for simulation

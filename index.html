@@ -133,7 +133,6 @@
                         </div>
                         <p>真正 WebGL 3D 网格，受灯光阴影与姿态矩阵驱动。</p>
                     </div>
-                    <!-- Cube Stage (Swapped to WebGL Canvas) -->
                     <div class="cube-stage">
                         <canvas id="canvas-cube"></canvas>
                     </div>
@@ -150,15 +149,92 @@
                         </div>
                         <p>使用透视投影摄像机，沿 Z 轴层叠放置纹理。角度变化移动相机，提供真 3D 景深。</p>
                     </div>
-                    <!-- Parallax Stage (Swapped to WebGL Canvas) -->
                     <div class="parallax-frame" id="parallax-frame">
                         <canvas id="canvas-parallax"></canvas>
                     </div>
                 </div>
             </section>
+
+            <!-- SCENE 5: MARBLE MAZE (WebGL) -->
+            <section id="scene-maze" class="scene-section">
+                <div class="viewer-container">
+                    <canvas id="canvas-maze"></canvas>
+                    <div class="viewer-overlay">
+                        <div class="panel-header">
+                            <span class="panel-tag">GAME / MAZE</span>
+                            <h3>MARBLE MAZE RUNNER</h3>
+                        </div>
+                        <p>倾斜手机以滚动铁球。避开深灰色黑洞陷阱，滚入亮橘色终点块通关。</p>
+                        <button id="btn-reset-maze" class="btn btn-secondary btn-xs">RESET BALL</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SCENE 6: STARFIELD COMPASS (WebGL) -->
+            <section id="scene-stars" class="scene-section">
+                <div class="viewer-container">
+                    <canvas id="canvas-stars"></canvas>
+                    <div class="viewer-overlay">
+                        <div class="panel-header">
+                            <span class="panel-tag">SPACE / GYRO</span>
+                            <h3>3D COMPASS STARFIELD</h3>
+                        </div>
+                        <p>旋转设备在星空中浏览。中央雷达虚线圈指示相对地磁偏航角（Alpha）。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SCENE 7: SHAKE & DRAW (2D/WebGL) -->
+            <section id="scene-shake" class="scene-section">
+                <div class="viewer-container">
+                    <canvas id="canvas-shake"></canvas>
+                    <div class="viewer-overlay">
+                        <div class="panel-header">
+                            <span class="panel-tag">MOTION / SHAKE</span>
+                            <h3>SHAKE TO SKETCH</h3>
+                        </div>
+                        <p>倾斜手机控制画笔移动。用力摇晃设备（振动）引发画笔轨迹物理爆炸清屏。</p>
+                        <button id="btn-clear-shake" class="btn btn-secondary btn-xs">CLEAR</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SCENE 8: HOLOGRAPHIC CARD (WebGL) -->
+            <section id="scene-card" class="scene-section">
+                <div class="viewer-container center-content">
+                    <div class="viewer-overlay absolute-top">
+                        <div class="panel-header">
+                            <span class="panel-tag">LIGHT / REFRACT</span>
+                            <h3>HOLOGRAPHIC SPECULAR CARD</h3>
+                        </div>
+                        <p>倾斜卡片以改变反射法线。观察镭射高光与折射在卡片上的掠过效果。</p>
+                    </div>
+                    <div class="cube-stage">
+                        <canvas id="canvas-card"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SCENE 9: AUDIO THEREMIN (Audio/WebGL) -->
+            <section id="scene-theremin" class="scene-section">
+                <div class="viewer-container flex-column">
+                    <div class="viewer-overlay relative-top">
+                        <div class="panel-header">
+                            <span class="panel-tag">AUDIO / SYNTH</span>
+                            <h3>THEREMIN SOUND OSCILLATOR</h3>
+                        </div>
+                        <p>开启声音后：左右翻滚改变音高，前后俯仰改变音强。下方示波线实时响应。</p>
+                        <button id="btn-toggle-audio" class="btn btn-primary btn-xs">START AUDIO</button>
+                    </div>
+                    <div class="parallax-frame" style="height: 160px; flex-grow: 0; margin-bottom: 24px;">
+                        <canvas id="canvas-theremin"></canvas>
+                    </div>
+                </div>
+            </section>
+
         </main>
 
-        <!-- Navigation Bar: High-contrast Tactical Tab Menu -->
+        <!-- Navigation Bar: Scrolling Tab Menu -->
         <nav class="app-nav">
             <button class="nav-item active" data-target="scene-dashboard">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
@@ -179,6 +255,26 @@
             <button class="nav-item" data-target="scene-parallax">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="8" x2="3" y2="8"></line></svg>
                 <span>DEPTH</span>
+            </button>
+            <button class="nav-item" data-target="scene-maze">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M9 3v18M15 3v18M3 9h18M3 15h18"></path></svg>
+                <span>MAZE</span>
+            </button>
+            <button class="nav-item" data-target="scene-stars">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v20M2 12h20"></path></svg>
+                <span>STARS</span>
+            </button>
+            <button class="nav-item" data-target="scene-shake">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM6 3a3 3 0 0 0-3 3v12a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"></path></svg>
+                <span>SHAKE</span>
+            </button>
+            <button class="nav-item" data-target="scene-card">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" ry="2"></rect><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span>CARD</span>
+            </button>
+            <button class="nav-item" data-target="scene-theremin">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H7M17 19H7M18 12H6"></path></svg>
+                <span>AUDIO</span>
             </button>
         </nav>
     </div>
