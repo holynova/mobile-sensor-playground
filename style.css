@@ -488,3 +488,7 @@ body {
 .nav-item.active svg {
     color: var(--accent-color);
 }
+
+.github-link:hover {
+    color: var(--accent-color) !important;
+}
