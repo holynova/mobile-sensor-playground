@@ -1,6 +1,6 @@
 /**
  * Scene: 3D Pose Cube (WebGL with Three.js)
- * Displays a rotating wireframe box inside a WebGL rendering context.
+ * Rendered at low resolution 0.25 scale for pixel-art visual.
  */
 import * as THREE from 'three';
 import { sensorState } from '../app.js';
@@ -12,16 +12,16 @@ let scene = null;
 let camera = null;
 let cubeGroup = null;
 
-let curX = -0.3; // Initial rotation offsets in radians
+let curX = -0.3;
 let curY = 0.4;
 let curZ = 0;
 const lerpFactor = 0.12;
+const renderScale = 0.25; // 4x pixelation
 
 export function initCube() {
     canvas = document.getElementById('canvas-cube');
     if (!canvas) return;
     
-    // Only initialize Three.js components once
     if (renderer) {
         resizeCube();
         return;
@@ -33,51 +33,50 @@ export function initCube() {
 
     // 1. Create Scene
     scene = new THREE.Scene();
-    scene.background = null; // transparent background
+    scene.background = null;
 
     // 2. Create Camera
     camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
     camera.position.z = 6;
 
-    // 3. Create WebGL Renderer
+    // 3. Create WebGL Renderer (No antialiasing)
     renderer = new THREE.WebGLRenderer({
         canvas: canvas,
-        antialias: true,
+        antialias: false,
         alpha: true
     });
-    renderer.setPixelRatio(window.devicePixelRatio || 1);
-    renderer.setSize(width, height);
+    renderer.setPixelRatio(1);
+    renderer.setSize(width * renderScale, height * renderScale, false);
 
-    // 4. Create Geometries and Materials (Instrument Wireframe Box)
+    // 4. Create Geometries (Pixelated wireframe body)
     cubeGroup = new THREE.Group();
 
-    // Semi-translucent body
     const geometry = new THREE.BoxGeometry(1.8, 1.8, 1.8);
     const material = new THREE.MeshStandardMaterial({
         color: 0x101420,
-        roughness: 0.2,
+        roughness: 0.4,
         metalness: 0.1,
         transparent: true,
         opacity: 0.65,
-        side: THREE.DoubleSide
+        flatShading: true
     });
     const bodyMesh = new THREE.Mesh(geometry, material);
     cubeGroup.add(bodyMesh);
 
-    // Highlight Orange Edges
+    // Highlight Orange Edges (thicker looking due to low resolution)
     const edges = new THREE.EdgesGeometry(geometry);
     const lineMat = new THREE.LineBasicMaterial({
         color: 0xff6b00,
-        linewidth: 2 // Note: linewidth is usually 1 on Windows browsers due to WebGL limitations, but edges look clean
+        linewidth: 2
     });
     const wireframe = new THREE.LineSegments(edges, lineMat);
     cubeGroup.add(wireframe);
 
-    // Minor decorative inner axis wireframe
+    // Axis grid inside
     const innerGeo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
     const innerEdges = new THREE.EdgesGeometry(innerGeo);
     const innerLineMat = new THREE.LineBasicMaterial({
-        color: 0x3d4960,
+        color: 0x263045,
         linewidth: 1
     });
     const innerWireframe = new THREE.LineSegments(innerEdges, innerLineMat);
@@ -85,7 +84,7 @@ export function initCube() {
 
     scene.add(cubeGroup);
 
-    // 5. Add Lighting
+    // 5. Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
 
@@ -93,11 +92,6 @@ export function initCube() {
     dirLight1.position.set(5, 5, 5);
     scene.add(dirLight1);
 
-    const dirLight2 = new THREE.DirectionalLight(0xff6b00, 0.4);
-    dirLight2.position.set(-5, -5, -2);
-    scene.add(dirLight2);
-
-    // Handle resizing
     window.addEventListener('resize', resizeCube);
 }
 
@@ -109,37 +103,31 @@ function resizeCube() {
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
 
-    renderer.setSize(width, height);
+    renderer.setSize(width * renderScale, height * renderScale, false);
 }
 
 export function tickCube(timestamp) {
     if (!renderer || !scene || !camera || !cubeGroup) return;
 
-    // Auto-spin simulated Alpha yaw when in simulation mode
     if (sensorState.isSimulated) {
         sensorState.alpha = (sensorState.alpha + 0.3) % 360;
     }
 
-    // Map degree orientations to target radians
     const targetX = (-sensorState.beta - 20) * Math.PI / 180;
     const targetY = (sensorState.gamma + 25) * Math.PI / 180;
     const targetZ = (sensorState.alpha) * Math.PI / 180;
 
-    // Smooth rotations with Lerp
     curX += (targetX - curX) * lerpFactor;
     curY += (targetY - curY) * lerpFactor;
 
-    // Alpha angle wrapping protection
     let diffZ = targetZ - curZ;
     if (diffZ > Math.PI) diffZ -= Math.PI * 2;
     if (diffZ < -Math.PI) diffZ += Math.PI * 2;
     curZ = (curZ + diffZ * lerpFactor + Math.PI * 2) % (Math.PI * 2);
 
-    // Apply rotation matrices
     cubeGroup.rotation.x = curX;
     cubeGroup.rotation.y = curY;
     cubeGroup.rotation.z = curZ;
 
-    // Render frame
     renderer.render(scene, camera);
 }

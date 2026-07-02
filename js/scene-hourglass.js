@@ -1,6 +1,7 @@
 /**
  * Scene: 3D Gravity Hourglass (WebGL with Three.js)
- * Implements a rotating 3D Lathe glass geometry hourglass and 3D sand particles.
+ * Rendered at low resolution 0.25 scale for pixel-art visual.
+ * Inverts Y gravity, increases sand grain count to 350.
  */
 import * as THREE from 'three';
 import { sensorState } from '../app.js';
@@ -14,18 +15,19 @@ let sandGrains = [];
 let hourglassMesh = null;
 let hourglassLines = null;
 
-const sandCount = 130;
-const grainRadius = 0.045; // 3D grain size
+const sandCount = 350; // Increased sand count for fullness
+const grainRadius = 0.042;
 const gravityConstant = 0.012;
 const sandDamping = 0.72;
 const sandBounce = 0.08;
-const sandSeparation = 0.45;
+const sandSeparation = 0.42;
+const renderScale = 0.25; // 4x pixelation
 
 // Hourglass Dimensions
 const glassHeight = 4.2;
 const maxRadius = 0.95;
-const neckRadius = 0.14;
-const neckHeight = 0.15; // vertical height of the neck throat
+const neckRadius = 0.13;
+const neckHeight = 0.15;
 
 class Sand3D {
     constructor(mesh) {
@@ -36,7 +38,7 @@ class Sand3D {
     resetPosition() {
         // Spawn inside top funnel bulb
         const ry = (Math.random() * 0.8 + 0.3) * (glassHeight / 2 - 0.2); // y from 0.3 to 1.9
-        const rMax = getGlassRadiusAtY(ry) - grainRadius - 0.05;
+        const rMax = getGlassRadiusAtY(ry) - grainRadius - 0.04;
         const angle = Math.random() * Math.PI * 2;
         const dist = Math.random() * rMax;
 
@@ -89,14 +91,11 @@ class Sand3D {
             this.x = Math.cos(angle) * maxAllowedRadius;
             this.z = Math.sin(angle) * maxAllowedRadius;
 
-            // Bounce velocities
             this.vx = -this.vx * sandBounce;
             this.vz = -this.vz * sandBounce;
 
-            // Simple slide force downwards/upwards along V-slope
-            const slopeNudge = 0.005;
+            const slopeNudge = 0.006;
             if (this.y < 0) {
-                // Upper or lower bulb sliding directions
                 this.vy += slopeNudge;
             } else {
                 if (sensorState.beta < 0) {
@@ -109,7 +108,6 @@ class Sand3D {
     }
 }
 
-// Lathe profile function
 function getGlassRadiusAtY(y) {
     const absY = Math.abs(y);
     const halfH = glassHeight / 2;
@@ -118,9 +116,7 @@ function getGlassRadiusAtY(y) {
         return neckRadius;
     }
     
-    // Smooth cosine or sine interpolation between neck and max bulb radius
     const t = (absY - neckHeight) / (halfH - neckHeight);
-    // Interpolate: range 0 to 1
     return neckRadius + (maxRadius - neckRadius) * Math.sin(t * Math.PI / 2);
 }
 
@@ -145,25 +141,25 @@ export function initHourglass() {
     camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
     camera.position.z = 6;
 
-    // 3. Create WebGL Renderer
+    // 3. Create WebGL Renderer (No antialiasing)
     renderer = new THREE.WebGLRenderer({
         canvas: canvas,
-        antialias: true
+        antialias: false
     });
-    renderer.setPixelRatio(window.devicePixelRatio || 1);
-    renderer.setSize(width, height);
+    renderer.setPixelRatio(1);
+    renderer.setSize(width * renderScale, height * renderScale, false);
 
     // 4. Create 3D Lathe Hourglass Geometry
     const points = [];
-    const segments = 40;
+    const segments = 36;
     for (let i = 0; i <= segments; i++) {
         const t = i / segments;
-        const y = (t - 0.5) * glassHeight; // -2.1 to 2.1
+        const y = (t - 0.5) * glassHeight;
         const r = getGlassRadiusAtY(y);
         points.push(new THREE.Vector2(r, y));
     }
 
-    const latheGeo = new THREE.LatheGeometry(points, 24);
+    const latheGeo = new THREE.LatheGeometry(points, 20);
     
     // Semitransparent body
     const glassMat = new THREE.MeshStandardMaterial({
@@ -179,25 +175,25 @@ export function initHourglass() {
     const outlineMat = new THREE.LineBasicMaterial({
         color: 0x2d3748,
         transparent: true,
-        opacity: 0.45
+        opacity: 0.5
     });
     hourglassLines = new THREE.LineSegments(new THREE.EdgesGeometry(latheGeo), outlineMat);
     scene.add(hourglassLines);
 
-    // Flat support caps on top and bottom bases
-    const capGeo = new THREE.CylinderGeometry(maxRadius + 0.05, maxRadius + 0.05, 0.1, 24);
+    // Support caps on top and bottom
+    const capGeo = new THREE.CylinderGeometry(maxRadius + 0.05, maxRadius + 0.05, 0.08, 16);
     const capMat = new THREE.MeshStandardMaterial({ color: 0x151a26, roughness: 0.5 });
     
     const topCap = new THREE.Mesh(capGeo, capMat);
-    topCap.position.y = glassHeight / 2 + 0.05;
+    topCap.position.y = glassHeight / 2 + 0.04;
     scene.add(topCap);
 
     const bottomCap = new THREE.Mesh(capGeo, capMat);
-    bottomCap.position.y = -glassHeight / 2 - 0.05;
+    bottomCap.position.y = -glassHeight / 2 - 0.04;
     scene.add(bottomCap);
 
-    // 5. Instantiate Sand Grains
-    const grainGeo = new THREE.SphereGeometry(grainRadius, 6, 6);
+    // 5. Instantiate Sand Grains (350 grains)
+    const grainGeo = new THREE.SphereGeometry(grainRadius, 4, 4); // low-res sphere mesh
     const grainMat = new THREE.MeshBasicMaterial({ color: 0xff6b00 }); // Signal Orange
 
     sandGrains = [];
@@ -217,7 +213,6 @@ export function initHourglass() {
     dirLight.position.set(4, 5, 5);
     scene.add(dirLight);
 
-    // Reset Button
     const btnReset = document.getElementById('btn-reset-hourglass');
     if (btnReset) {
         btnReset.removeEventListener('click', resetHourglassSand);
@@ -239,34 +234,34 @@ export function resizeHourglass() {
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
 
-    renderer.setSize(width, height);
+    renderer.setSize(width * renderScale, height * renderScale, false);
 }
 
 export function tickHourglass(timestamp) {
     if (!renderer || !scene || !camera) return;
 
-    // Compute gravity
     const radGamma = (sensorState.gamma * Math.PI) / 180;
     const radBeta = (sensorState.beta * Math.PI) / 180;
 
     const gx = Math.sin(radGamma) * gravityConstant;
-    const gy = Math.sin(radBeta) * gravityConstant;
+    
+    // INVERTED Y gravity for WebGL coord system (+Y is up)
+    const gy = -Math.sin(radBeta) * gravityConstant;
+    
     const gz = -Math.cos(radBeta) * Math.cos(radGamma) * gravityConstant;
 
-    // Resolve sand-sand contacts
     resolveSandContacts();
 
-    // Update sand grains
     sandGrains.forEach(grain => {
         grain.update(gx, gy, gz);
     });
 
-    // Render WebGL
     renderer.render(scene, camera);
 }
 
 function resolveSandContacts() {
     const len = sandGrains.length;
+    // Fast contact resolver: sand particles compress and pile up quickly
     for (let i = 0; i < len; i++) {
         const g1 = sandGrains[i];
         for (let j = i + 1; j < len; j++) {
@@ -293,12 +288,12 @@ function resolveSandContacts() {
                 g2.y += pushY;
                 g2.z += pushZ;
 
-                g1.vx *= 0.35;
-                g1.vy *= 0.35;
-                g1.vz *= 0.35;
-                g2.vx *= 0.35;
-                g2.vy *= 0.35;
-                g2.vz *= 0.35;
+                g1.vx *= 0.3;
+                g1.vy *= 0.3;
+                g1.vz *= 0.3;
+                g2.vx *= 0.3;
+                g2.vy *= 0.3;
+                g2.vz *= 0.3;
             }
         }
     }

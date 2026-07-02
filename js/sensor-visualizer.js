@@ -1,6 +1,6 @@
 /**
- * Sensor Visualizer - Bubble Level
- * Redrawn as a flat, precise technical instrument dial.
+ * Sensor Visualizer - Bubble Level (WebGL / 2D Canvas)
+ * Pixelated downscaled rendering at 0.25 scale for retro instrument feel.
  */
 import { sensorState } from '../app.js';
 
@@ -8,6 +8,7 @@ let canvas = null;
 let ctx = null;
 let width = 200;
 let height = 200;
+const renderScale = 0.25; // 4x pixelation
 
 export function initDashboard() {
     canvas = document.getElementById('canvas-bubble-level');
@@ -19,14 +20,22 @@ export function initDashboard() {
 export function resizeDashboard() {
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
     
     width = rect.width;
     height = rect.height;
     
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    ctx.scale(dpr, dpr);
+    // Set canvas drawing buffer to a low resolution (e.g. 50x50)
+    canvas.width = Math.floor(width * renderScale);
+    canvas.height = Math.floor(height * renderScale);
+    
+    // Disable smoothing on the canvas context for crisp pixel edges
+    ctx.imageSmoothingEnabled = false;
+    ctx.mozImageSmoothingEnabled = false;
+    ctx.webkitImageSmoothingEnabled = false;
+    ctx.msImageSmoothingEnabled = false;
+    
+    // Scale drawing operations down to fit the smaller buffer
+    ctx.scale(renderScale, renderScale);
 }
 
 export function tickDashboard() {
@@ -46,37 +55,38 @@ export function tickDashboard() {
     const statusText = document.getElementById('lbl-level-status');
     if (statusText) {
         if (isLeveled) {
-            statusText.innerHTML = `<span style="color: #00e5ff; font-weight: 700;">✓ ALIGNED (TILT < 1°)</span>`;
+            statusText.innerHTML = `<span style="color: #00e5ff; font-weight: 700;">✓ ALIGNED</span>`;
         } else {
-            statusText.innerHTML = `DEVIATION: <span style="color: #ff6b00; font-weight: 700;">${totalTilt.toFixed(1)}°</span>`;
+            statusText.innerHTML = `TILT: <span style="color: #ff6b00; font-weight: 700;">${totalTilt.toFixed(1)}°</span>`;
         }
     }
 
     // 1. Draw solid dark backing plate
     ctx.beginPath();
     ctx.arc(cx, cy, rBoundary, 0, Math.PI * 2);
-    ctx.fillStyle = '#090c13';
+    ctx.fillStyle = '#05070a';
     ctx.fill();
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 2; // thicker lines for pixel aesthetic
     ctx.strokeStyle = '#202838';
     ctx.stroke();
 
-    // 2. Technical crosshairs
+    // 2. Technical crosshairs (dashed pixel effect)
     ctx.beginPath();
     ctx.moveTo(cx - rBoundary, cy);
     ctx.lineTo(cx + rBoundary, cy);
     ctx.moveTo(cx, cy - rBoundary);
     ctx.lineTo(cx, cy + rBoundary);
-    ctx.strokeStyle = 'rgba(96, 116, 139, 0.1)';
+    ctx.strokeStyle = 'rgba(96, 116, 139, 0.15)';
+    ctx.lineWidth = 1;
     ctx.stroke();
 
-    // 3. Concentric Technical Target rings
-    const rings = [rBoundary * 0.3, rBoundary * 0.65, rBoundary * 0.15];
+    // 3. Concentric Target rings
+    const rings = [rBoundary * 0.35, rBoundary * 0.7, rBoundary * 0.15];
     rings.forEach((ringR, idx) => {
         ctx.beginPath();
         ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
-        ctx.lineWidth = idx === 2 ? 1.5 : 1;
-        ctx.strokeStyle = idx === 2 ? 'rgba(0, 229, 255, 0.25)' : 'rgba(96, 116, 139, 0.1)';
+        ctx.lineWidth = idx === 2 ? 2 : 1;
+        ctx.strokeStyle = idx === 2 ? 'rgba(0, 229, 255, 0.3)' : 'rgba(96, 116, 139, 0.15)';
         ctx.stroke();
     });
 
@@ -87,7 +97,7 @@ export function tickDashboard() {
 
     // Boundary constraint check
     const dist = Math.sqrt(dx * dx + dy * dy);
-    const maxBubbleTravel = rBoundary - 12; // 12px is bubble radius
+    const maxBubbleTravel = rBoundary - 10;
     if (dist > maxBubbleTravel) {
         const theta = Math.atan2(dy, dx);
         dx = Math.cos(theta) * maxBubbleTravel;
@@ -97,20 +107,18 @@ export function tickDashboard() {
     const bx = cx + dx;
     const by = cy + dy;
 
-    // 5. Draw flat bubble
-    const bubbleR = 10;
-    ctx.beginPath();
-    ctx.arc(bx, by, bubbleR, 0, Math.PI * 2);
-    // Leveled = green/cyan laser; Unbalanced = Signal Orange
+    // 5. Draw flat square pixel bubble
+    const bubbleSize = 16;
     ctx.fillStyle = isLeveled ? '#00e5ff' : '#ff6b00';
-    ctx.fill();
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = '#090c13';
-    ctx.stroke();
+    // Draw as a blocky pixel square representing bubble
+    ctx.fillRect(bx - bubbleSize/2, by - bubbleSize/2, bubbleSize, bubbleSize);
+    
+    // Draw a dark outline border
+    ctx.strokeStyle = '#05070a';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(bx - bubbleSize/2, by - bubbleSize/2, bubbleSize, bubbleSize);
 
-    // Draw tiny technical dot in the exact center of the bubble
-    ctx.beginPath();
-    ctx.arc(bx, by, 2, 0, Math.PI * 2);
-    ctx.fillStyle = '#090c13';
-    ctx.fill();
+    // Draw a single center pixel highlight
+    ctx.fillStyle = '#05070a';
+    ctx.fillRect(bx - 1, by - 1, 2, 2);
 }
