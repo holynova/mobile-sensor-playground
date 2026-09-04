@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mobile-sensor-playground",
+  "compatibility_date": "2026-09-04",
+  "workers_dev": false,
+  "assets": {
+    "directory": "./dist"
+  },
+  "routes": [
+    { "pattern": "mobile-sensor-playground.xiaosang.cc", "custom_domain": true }
+  ]
+}
