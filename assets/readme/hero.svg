@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1200" height="360" viewBox="0 0 1200 360"
+     role="img" aria-labelledby="title desc">
+  <title id="title">移动传感器乐园 Mobile Sensor Playground — WebGL 3D 传感器仪表盘</title>
+  <desc id="desc">深蓝黑战术风标题：移动传感器乐园，副标题晃一晃手机，3D 世界跟着动；右侧是一部手机，屏幕里是橙色线框立方体与偏航、俯仰、横滚三行读数，下方是水平仪气泡。</desc>
+
+  <rect width="1200" height="360" rx="26" fill="#0a0f1a"/>
+
+  <g id="title-block" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+    <text x="56" y="62" font-size="19" letter-spacing="3" fill="#9ca3af">WEBGL 3D 传感器仪表盘 · SENSOR PLAYGROUND</text>
+    <text x="56" y="128" font-size="62" font-weight="700" fill="#f9fafb">移动传感器乐园</text>
+    <text x="56" y="168" font-size="23" fill="#e5e7eb">MOBILE SENSOR PLAYGROUND — 晃一晃手机，3D 世界跟着动</text>
+    <text x="56" y="204" font-size="19" fill="#9ca3af">陀螺仪与加速度计的实时 3D 可视化，10 个可玩场景。</text>
+    <g id="chips" font-size="18" fill="#e5e7eb" text-anchor="middle">
+      <g><rect x="56" y="238" width="126" height="36" rx="18" fill="#1f2937" stroke="#374151" stroke-width="1.5"/><text x="119" y="262">10 个 3D 场景</text></g>
+      <g><rect x="194" y="238" width="162" height="36" rx="18" fill="#1f2937" stroke="#374151" stroke-width="1.5"/><text x="275" y="262">陀螺仪 + 加速度计</text></g>
+      <g><rect x="368" y="238" width="150" height="36" rx="18" fill="#1f2937" stroke="#374151" stroke-width="1.5"/><text x="443" y="262">Three.js WebGL</text></g>
+      <g><rect x="530" y="238" width="126" height="36" rx="18" fill="#1f2937" stroke="#374151" stroke-width="1.5"/><text x="593" y="262">桌面模拟模式</text></g>
+    </g>
+  </g>
+
+  <g id="phone" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <rect x="880" y="32" width="200" height="272" rx="24" fill="#1f2937" stroke="#374151" stroke-width="2"/>
+    <rect x="892" y="44" width="176" height="248" rx="14" fill="#0b1220"/>
+    <rect x="948" y="52" width="64" height="10" rx="5" fill="#1f2937"/>
+    <g id="cube" stroke="#ff7a00" stroke-width="2" fill="none">
+      <rect x="946" y="104" width="56" height="56"/>
+      <rect x="964" y="86" width="56" height="56"/>
+      <path d="M946 104 L964 86 M1002 104 L1020 86 M946 160 L964 142 M1002 160 L1020 142"/>
+    </g>
+    <g id="readouts" font-size="18" fill="#e5e7eb" text-anchor="middle">
+      <text x="980" y="200">ALPHA 0.00°</text>
+      <text x="980" y="226">BETA 0.00°</text>
+      <text x="980" y="252">GAMMA 0.00°</text>
+    </g>
+    <g id="bubble">
+      <circle cx="980" cy="278" r="10" fill="none" stroke="#ff7a00" stroke-width="1.5"/>
+      <circle cx="980" cy="278" r="3" fill="#22d3ee"/>
+    </g>
+  </g>
+
+  <text x="980" y="336" font-size="18" fill="#9ca3af" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">倾斜手机，3D 场景实时响应</text>
+</svg>
